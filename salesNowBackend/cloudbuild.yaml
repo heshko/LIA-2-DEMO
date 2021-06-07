@@ -1,0 +1,36 @@
+substitutions:
+    # Params with default values
+    _PROJECT_NAME: a
+    _PROJECT_REGION: europe-west1
+    _TARGET_PROJECT: a-d-dev
+    _CONTAINER_REGION: gcr.io
+    _HOST: 'http://+:8080'
+
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args:
+  - 'build'
+  - '-t'
+  - '${_CONTAINER_REGION}/$PROJECT_ID/${_PROJECT_NAME}:${_TARGET_PROJECT}-${SHORT_SHA}'
+  - './salesNowBackend'
+- name: 'gcr.io/cloud-builders/docker'
+  args:
+  - 'push'
+  - '${_CONTAINER_REGION}/$PROJECT_ID/${_PROJECT_NAME}:${_TARGET_PROJECT}-${SHORT_SHA}'
+- name: 'gcr.io/cloud-builders/gcloud'
+  args:
+  - 'run'
+  - 'deploy'
+  - '${_PROJECT_NAME}'
+  - '--image'
+  - '${_CONTAINER_REGION}/$PROJECT_ID/${_PROJECT_NAME}:${_TARGET_PROJECT}-${SHORT_SHA}'
+  - '--region'
+  - '${_PROJECT_REGION}'
+  - '--update-env-vars'
+  - 'GCLOUD_PROJECT=${_TARGET_PROJECT},BRANCH=${BRANCH_NAME},ASPNETCORE_URLS=${_HOST}'
+  - '--platform'
+  - 'managed'
+  - '--allow-unauthenticated'
+  - '--project'
+  - '${_TARGET_PROJECT}'
+  - '--async'
